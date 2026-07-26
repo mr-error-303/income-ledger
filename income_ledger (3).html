@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amar Income Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&family=Noto+Sans+Bengali:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #EFE9D8;
+    --paper-line: #D8CEB0;
+    --ink: #211D16;
+    --ink-soft: #55503F;
+    --green-900: #163A2C;
+    --green-800: #1D4736;
+    --green-700: #24573F;
+    --brass: #A9822F;
+    --brass-light: #D9BE7A;
+    --brass-dark: #7C5E20;
+    --maroon: #7A2426;
+    --maroon-soft: #F0D9D6;
+    --amber-soft: #F3E1BE;
+    --green-soft: #DCE7D8;
+    --white: #FBF9F2;
+    --font-display: 'Fraunces', Georgia, serif;
+    --font-body: 'IBM Plex Sans', 'Noto Sans Bengali', sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+    --font-bn: 'Noto Sans Bengali', sans-serif;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body{
+    margin:0;
+    background: var(--paper);
+    background-image: repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(90,80,50,0.05) 28px);
+    color: var(--ink);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    padding: 16px;
+    padding-bottom: 90px;
+  }
+  #app{ max-width: 560px; margin: 0 auto; }
+  .storage-note{ font-size: 10.5px; color: var(--ink-soft); text-align:center; margin-bottom: 6px; line-height:1.4; }
+  .backup-row{ display:flex; justify-content:center; gap: 10px; margin-bottom: 12px; }
+  .backup-row button{ background:none; border: 1px solid var(--paper-line); color: var(--green-800); font-size: 11px; padding: 5px 12px; border-radius: 16px; cursor:pointer; font-family: var(--font-body); }
+  .backup-row button:hover{ background: var(--green-soft); }
+  .year-stats-row{ display:grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+  .year-stats-row.two-col{ grid-template-columns: repeat(2, 1fr); }
+  .cover{ background: linear-gradient(160deg, var(--green-900), var(--green-700)); border-radius: var(--radius); padding: 22px 20px 18px; color: var(--white); position: relative; overflow: hidden; box-shadow: 0 6px 18px rgba(22,58,44,0.28); }
+  .cover::after{ content:""; position:absolute; inset:6px; border: 1px solid rgba(217,190,122,0.35); border-radius: 6px; pointer-events:none; }
+  .cover-title{ font-family: var(--font-display); font-size: 22px; font-weight: 600; margin: 0 0 2px; }
+  .cover-sub{ font-size: 11.5px; color: var(--brass-light); text-transform: uppercase; letter-spacing: 1.6px; margin-bottom: 14px; }
+  .month-nav{ display:flex; align-items:center; justify-content:space-between; margin-bottom: 14px; }
+  .month-nav button{ background: rgba(251,249,242,0.1); border: 1px solid rgba(217,190,122,0.45); color: var(--brass-light); width: 32px; height: 32px; border-radius: 50%; font-size: 16px; cursor:pointer; }
+  .month-nav button:hover{ background: rgba(217,190,122,0.22); }
+  .month-label{ font-family: var(--font-display); font-size: 17px; font-weight: 600; }
+  .totals-row{ display:flex; justify-content:space-between; align-items:flex-end; font-family: var(--font-mono); margin-bottom: 8px; }
+  .totals-row .earned{ font-size: 21px; font-weight:600; color: var(--brass-light); }
+  .totals-row .goal{ font-size: 12.5px; color: rgba(251,249,242,0.75); }
+  .totals-sub{ font-size:11px; color: rgba(251,249,242,0.6); margin-bottom:8px; font-family: var(--font-mono); }
+  .progress-track{ background: rgba(251,249,242,0.14); border-radius: 20px; height: 9px; overflow:hidden; margin-bottom: 6px; }
+  .progress-fill{ height:100%; background: linear-gradient(90deg, var(--brass-dark), var(--brass-light)); border-radius: 20px; transition: width 0.4s ease; }
+  .progress-pct{ font-family: var(--font-mono); font-size: 11px; color: rgba(251,249,242,0.7); text-align:right; }
+  .card{ background: var(--white); border: 1px solid var(--paper-line); border-radius: var(--radius); padding: 14px 16px; margin-top: 12px; }
+  .card-title{ font-family: var(--font-display); font-size: 13.5px; font-weight: 600; color: var(--green-800); text-transform: uppercase; letter-spacing: 0.8px; margin: 0 0 10px; display:flex; align-items:center; gap:6px; }
+  .card-title .rule{ flex:1; height:1px; background: var(--paper-line); }
+  .goal-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .field label{ display:block; font-size: 11px; color: var(--ink-soft); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .currency-input{ display:flex; align-items:center; border: 1px solid var(--paper-line); border-radius: 6px; background: var(--paper); overflow:hidden; }
+  .currency-input span{ padding: 0 8px; color: var(--brass-dark); font-family: var(--font-mono); font-weight:600; border-right: 1px solid var(--paper-line); }
+  .currency-input input{ border:none; background:transparent; outline:none; padding: 8px 8px; width:100%; font-family: var(--font-mono); font-size: 14px; color: var(--ink); }
+  .currency-input.readonly{ background: var(--paper); }
+  .currency-input.readonly input{ color: var(--green-800); font-weight:600; }
+  .auto-btn{ margin-top: 8px; background:none; border: 1px dashed var(--brass); color: var(--brass-dark); font-size: 11.5px; padding: 5px 10px; border-radius: 20px; cursor:pointer; font-family: var(--font-body); }
+  .auto-btn:hover{ background: var(--amber-soft); }
+  .stats-strip{ display:grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+  .stat-box{ background: var(--white); border: 1px solid var(--paper-line); border-radius: 8px; padding: 10px 8px; text-align:center; }
+  .stat-box .val{ font-family: var(--font-mono); font-size: 15px; font-weight: 600; color: var(--green-800); }
+  .stat-box.warn .val{ color: var(--maroon); }
+  .stat-box .lbl{ font-size: 9.5px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.4px; margin-top: 3px; line-height:1.3; }
+  .weekday-row{ display:grid; grid-template-columns: repeat(7, 1fr); margin-top: 14px; margin-bottom: 6px; }
+  .weekday-row div{ text-align:center; font-family: var(--font-bn); font-size: 12px; color: var(--green-800); font-weight:600; }
+  .cal-grid{ display:grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+  .day-cell{ position:relative; aspect-ratio: 1 / 1; background: var(--white); border: 1px solid var(--paper-line); border-radius: 7px; padding: 4px 3px; cursor:pointer; display:flex; flex-direction:column; transition: transform 0.1s ease; }
+  .day-cell:hover{ transform: translateY(-1px); border-color: var(--brass); }
+  .day-cell.empty{ background:transparent; border:none; cursor:default; }
+  .day-cell.empty:hover{ transform:none; }
+  .day-cell.today{ border: 1.5px solid var(--green-700); }
+  .day-num{ font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft); }
+  .day-amt{ font-family: var(--font-mono); font-size: 10px; font-weight:600; margin-top:auto; line-height:1.15; }
+  .day-cell.hit{ background: var(--green-soft); }
+  .day-cell.hit .day-amt{ color: var(--green-800); }
+  .day-cell.partial{ background: var(--amber-soft); }
+  .day-cell.partial .day-amt{ color: var(--brass-dark); }
+  .day-cell.zero{ background: var(--maroon-soft); }
+  .day-cell.zero .day-amt{ color: var(--maroon); }
+  .stamp{ position:absolute; top: -6px; right: -6px; width: 26px; height:26px; border-radius:50%; border: 2px solid var(--brass-dark); color: var(--brass-dark); background: rgba(255,255,255,0.55); display:flex; align-items:center; justify-content:center; font-size: 12px; font-weight:700; transform: rotate(-14deg); mix-blend-mode: multiply; }
+  .note-dot{ position:absolute; bottom:4px; right:4px; font-size: 9px; }
+  .overlay{ position:fixed; inset:0; background: rgba(22,20,14,0.45); display:flex; align-items:flex-end; justify-content:center; z-index: 50; }
+  .overlay.hidden{ display:none; }
+  .sheet{ background: var(--paper); width:100%; max-width: 560px; border-radius: 16px 16px 0 0; padding: 18px 18px 22px; max-height: 88vh; overflow-y:auto; box-shadow: 0 -8px 24px rgba(0,0,0,0.25); }
+  .sheet-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom: 14px; }
+  .sheet-title{ font-family: var(--font-display); font-size: 18px; font-weight:600; color: var(--green-900); }
+  .close-x{ background:none; border:none; font-size:20px; color: var(--ink-soft); cursor:pointer; line-height:1; }
+  textarea{ width:100%; border: 1px solid var(--paper-line); border-radius:6px; background: var(--white); padding:8px; font-family: var(--font-body); font-size: 13.5px; resize: vertical; min-height: 54px; color: var(--ink); }
+
+  .src-section{ margin-bottom: 14px; }
+  .src-head{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom: 6px; }
+  .src-head label{ font-size: 11.5px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.5px; }
+  .src-head .src-total{ font-family: var(--font-mono); font-size: 13px; font-weight:600; }
+  .src-total.income-total{ color: var(--green-800); }
+  .src-total.expense-total{ color: var(--maroon); }
+  .src-row{ display:flex; gap:6px; margin-bottom: 6px; align-items:center; }
+  .src-row input[type=text]{ flex: 1.4; border: 1px solid var(--paper-line); border-radius:6px; padding: 7px 8px; font-family: var(--font-body); font-size: 12.5px; background: var(--white); min-width:0; }
+  .src-row .src-amt{ flex:1; display:flex; align-items:center; border: 1px solid var(--paper-line); border-radius:6px; background: var(--white); overflow:hidden; }
+  .src-row .src-amt span{ padding: 0 6px; color: var(--brass-dark); font-family: var(--font-mono); font-size:12px; border-right:1px solid var(--paper-line); }
+  .src-row .src-amt input[type=number]{ border:none; outline:none; padding:7px 6px; width:100%; font-family: var(--font-mono); font-size: 12.5px; min-width:0; }
+  .src-row .src-del{ background:none; border:none; color: var(--maroon); font-size:15px; cursor:pointer; flex-shrink:0; padding: 4px; }
+  .src-add-btn{ background:none; border: 1px dashed var(--green-700); color: var(--green-700); font-size: 11.5px; padding: 5px 10px; border-radius: 20px; cursor:pointer; font-family: var(--font-body); }
+  .src-add-btn.exp{ border-color: var(--maroon); color: var(--maroon); }
+  .src-empty{ font-size: 11px; color: var(--ink-soft); font-style: italic; margin-bottom: 6px; }
+
+  .goal-list{ margin-top:6px; }
+  .goal-item{ display:flex; align-items:center; gap:8px; padding: 6px 0; border-bottom: 1px dashed var(--paper-line); font-size: 13px; }
+  .goal-item.done .goal-text{ text-decoration: line-through; color: var(--ink-soft); }
+  .goal-item input[type=checkbox]{ width:16px; height:16px; accent-color: var(--green-700); }
+  .goal-text{ flex:1; }
+  .goal-del{ background:none; border:none; color: var(--maroon); cursor:pointer; font-size:14px; }
+  .add-row{ display:flex; gap:6px; margin-top:8px; }
+  .add-row input[type=text]{ flex:1; border: 1px solid var(--paper-line); border-radius:6px; padding: 7px 9px; font-family: var(--font-body); font-size: 13px; background: var(--white); }
+  .add-btn{ background: var(--green-700); color: var(--white); border:none; padding: 0 14px; border-radius:6px; cursor:pointer; font-size: 13px; font-weight:600; }
+  .hint{ font-size: 10.5px; color: var(--ink-soft); margin-top: 4px; }
+  .sheet-actions{ display:flex; gap:8px; margin-top: 18px; }
+  .btn-primary{ flex:1; background: var(--green-900); color: var(--white); border:none; padding: 11px; border-radius: 8px; font-weight:600; font-size: 14px; cursor:pointer; }
+  .btn-secondary{ background: none; border: 1px solid var(--maroon); color: var(--maroon); padding: 11px 14px; border-radius: 8px; font-size: 13px; cursor:pointer; }
+  .field-block{ margin-bottom: 14px; }
+  .field-block label{ display:block; font-size: 11.5px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+  .toast{ position: fixed; bottom: 16px; left:50%; transform: translateX(-50%); background: var(--green-900); color: var(--white); padding: 8px 16px; border-radius: 20px; font-size: 12.5px; opacity:0; pointer-events:none; transition: opacity 0.25s ease; z-index: 60; }
+  .toast.show{ opacity:1; }
+  @media (max-width: 380px){ .day-num{ font-size: 9.5px; } .day-amt{ font-size: 8.5px; } .cover-title{ font-size: 19px; } }
+
+  .calc-fab{ position: fixed; bottom: 20px; right: 20px; width: 52px; height: 52px; border-radius: 50%; background: var(--green-900); color: var(--brass-light); border: 2px solid var(--brass); font-size: 22px; cursor: pointer; box-shadow: 0 4px 14px rgba(22,58,44,0.35); z-index: 55; display:flex; align-items:center; justify-content:center; }
+  .calc-fab:hover{ background: var(--green-700); }
+  .calc-panel{ position: fixed; bottom: 82px; right: 20px; width: 240px; background: var(--paper); border: 1px solid var(--paper-line); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.28); padding: 12px; z-index: 56; }
+  .calc-panel.hidden{ display:none; }
+  .calc-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px; }
+  .calc-head span{ font-family: var(--font-display); font-size: 13px; font-weight:600; color: var(--green-800); }
+  .calc-display{ background: var(--green-900); color: var(--white); font-family: var(--font-mono); font-size: 20px; text-align: right; padding: 10px 10px; border-radius: 8px; margin-bottom: 8px; overflow-x: auto; white-space: nowrap; }
+  .calc-grid{ display:grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .calc-btn{ background: var(--white); border: 1px solid var(--paper-line); border-radius: 6px; padding: 10px 0; font-family: var(--font-mono); font-size: 14px; font-weight: 600; color: var(--ink); cursor: pointer; }
+  .calc-btn:hover{ background: var(--amber-soft); }
+  .calc-btn.op{ background: var(--green-soft); color: var(--green-800); }
+  .calc-btn.clear{ background: var(--maroon-soft); color: var(--maroon); }
+  .calc-btn.eq{ background: var(--green-700); color: var(--white); grid-column: span 2; }
+  .calc-insert{ display:flex; gap:6px; margin-top: 10px; }
+  .calc-insert button{ flex:1; background: var(--brass-dark); color: var(--white); border: none; border-radius: 6px; font-size: 11px; padding: 8px 4px; cursor:pointer; font-family: var(--font-body); font-weight: 600; }
+  .calc-insert button:hover{ background: var(--brass); }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div class="storage-note">Ei file-er data tumar ei browser-eই save thake. Shobsomoy ekই file/shortcut theke open koro.</div>
+  <div class="backup-row">
+    <button id="exportBtn">⬇ Backup Export</button>
+    <button id="importBtn">⬆ Backup Import</button>
+    <input type="file" id="importFile" accept=".json" style="display:none;">
+  </div>
+
+  <div class="cover">
+    <div class="cover-title">Amar Income Ledger</div>
+    <div class="cover-sub">Monthly Earning Tracker</div>
+    <div class="month-nav">
+      <button id="prevMonth">‹</button>
+      <div class="month-label" id="monthLabel">July 2026</div>
+      <button id="nextMonth">›</button>
+    </div>
+    <div class="totals-row">
+      <div class="earned" id="totalEarned">৳ 0</div>
+      <div class="goal" id="goalDisplay">Goal: ৳ 0</div>
+    </div>
+    <div class="totals-sub" id="totalsSub">Income ৳0 − Khoroc ৳0</div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <div class="progress-pct" id="progressPct">0% puron</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Lokkho Set Koro <div class="rule"></div></div>
+    <div class="goal-grid">
+      <div class="field">
+        <label>Monthly Target</label>
+        <div class="currency-input"><span>৳</span><input type="number" id="monthlyGoalInput" min="0" placeholder="0"></div>
+      </div>
+      <div class="field">
+        <label>Daily Target</label>
+        <div class="currency-input"><span>৳</span><input type="number" id="dailyGoalInput" min="0" placeholder="0"></div>
+      </div>
+    </div>
+    <button class="auto-btn" id="autoCalcBtn">Auto Calculate Daily Target (Monthly ÷ Days)</button>
+  </div>
+
+  <div class="stats-strip">
+    <div class="stat-box" id="statRemaining"><div class="val">৳ 0</div><div class="lbl">Baki Koto Taka Lagbe</div></div>
+    <div class="stat-box" id="statDaysLeft"><div class="val">0</div><div class="lbl">Baki Koto Din</div></div>
+    <div class="stat-box" id="statAvgNeeded"><div class="val">৳ 0</div><div class="lbl">Protidin Gore Lagbe</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Bochor-er Hisab (Year Overview) <div class="rule"></div></div>
+    <div class="field">
+      <label>Yearly Target</label>
+      <div class="currency-input"><span>৳</span><input type="number" id="yearlyGoalInput" min="0" placeholder="0"></div>
+    </div>
+    <div class="year-stats-row">
+      <div class="stat-box" id="yMonthsLeft"><div class="val">0</div><div class="lbl">Mash Baki</div></div>
+      <div class="stat-box" id="yDaysLeft"><div class="val">0</div><div class="lbl">Din Baki</div></div>
+      <div class="stat-box" id="yHoursLeft"><div class="val">0</div><div class="lbl">Ghonta Baki</div></div>
+    </div>
+    <div class="year-stats-row">
+      <div class="stat-box" id="yEarned"><div class="val">৳ 0</div><div class="lbl">Ei Bochor Income</div></div>
+      <div class="stat-box" id="yRemaining"><div class="val">৳ 0</div><div class="lbl">Baki Koto Taka</div></div>
+      <div class="stat-box" id="yPct"><div class="val">0%</div><div class="lbl">Puron Hoyeche</div></div>
+    </div>
+    <div class="year-stats-row two-col">
+      <div class="stat-box" id="yPerDay"><div class="val">৳ 0</div><div class="lbl">Protidin Lagbe</div></div>
+      <div class="stat-box" id="yPerHour"><div class="val">৳ 0</div><div class="lbl">Prati Ghonta Lagbe</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Din-er Hisab <div class="rule"></div></div>
+    <div class="weekday-row"><div>রবি</div><div>সোম</div><div>মঙ্গল</div><div>বুধ</div><div>বৃহঃ</div><div>শুক্র</div><div>শনি</div></div>
+    <div class="cal-grid" id="calGrid"></div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="overlay">
+  <div class="sheet">
+    <div class="sheet-head">
+      <div class="sheet-title" id="modalDate">Date</div>
+      <button class="close-x" id="closeModal">✕</button>
+    </div>
+
+    <div class="src-section">
+      <div class="src-head">
+        <label>Income-er Utso (kothay theke koto)</label>
+        <div class="src-total income-total" id="incomeTotal">৳ 0</div>
+      </div>
+      <div id="incomeList"></div>
+      <button class="src-add-btn" id="addIncomeRow">+ Notun Income Add Koro</button>
+    </div>
+
+    <div class="src-section">
+      <div class="src-head">
+        <label>Khoroc-er Khat (kothay koto khoroc)</label>
+        <div class="src-total expense-total" id="expenseTotal">৳ 0</div>
+      </div>
+      <div id="expenseList"></div>
+      <button class="src-add-btn exp" id="addExpenseRow">+ Notun Khoroc Add Koro</button>
+    </div>
+
+    <div class="field-block">
+      <label>Net Income (Total Income − Total Khoroc)</label>
+      <div class="currency-input readonly"><span>৳</span><input type="text" id="modalNet" value="0" readonly></div>
+    </div>
+
+    <div class="field-block">
+      <label>Note</label>
+      <textarea id="modalNote" placeholder="Ajke ki korle, kono kotha likhe rakho..."></textarea>
+    </div>
+
+    <div class="field-block">
+      <label>Aajker Lokkho (Today's Goals)</label>
+      <div class="goal-list" id="goalList"></div>
+      <div class="add-row">
+        <input type="text" id="newGoalToday" placeholder="Notun lokkho add koro...">
+        <button class="add-btn" id="addGoalTodayBtn">Add</button>
+      </div>
+    </div>
+
+    <div class="field-block">
+      <label>Kal-er Jonno Plan</label>
+      <div class="add-row">
+        <input type="text" id="newGoalTomorrow" placeholder="Agamikal er lokkho likho...">
+        <button class="add-btn" id="addGoalTomorrowBtn">Add</button>
+      </div>
+      <div class="hint">Eta agamikal-er calendar entry-te show korbe.</div>
+    </div>
+
+    <div class="sheet-actions">
+      <button class="btn-primary" id="saveModalBtn">Save Koro</button>
+      <button class="btn-secondary" id="clearModalBtn">Clear Entry</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">Saved</div>
+
+<button class="calc-fab" id="calcFab" title="Calculator">🧮</button>
+<div class="calc-panel hidden" id="calcPanel">
+  <div class="calc-head">
+    <span>Quick Hisab</span>
+    <button class="close-x" id="calcClose">✕</button>
+  </div>
+  <div class="calc-display" id="calcDisplay">0</div>
+  <div class="calc-grid">
+    <button class="calc-btn clear" data-act="clear">C</button>
+    <button class="calc-btn clear" data-act="back">⌫</button>
+    <button class="calc-btn op" data-act="op" data-op="%">%</button>
+    <button class="calc-btn op" data-act="op" data-op="÷">÷</button>
+
+    <button class="calc-btn" data-act="digit" data-val="7">7</button>
+    <button class="calc-btn" data-act="digit" data-val="8">8</button>
+    <button class="calc-btn" data-act="digit" data-val="9">9</button>
+    <button class="calc-btn op" data-act="op" data-op="×">×</button>
+
+    <button class="calc-btn" data-act="digit" data-val="4">4</button>
+    <button class="calc-btn" data-act="digit" data-val="5">5</button>
+    <button class="calc-btn" data-act="digit" data-val="6">6</button>
+    <button class="calc-btn op" data-act="op" data-op="−">−</button>
+
+    <button class="calc-btn" data-act="digit" data-val="1">1</button>
+    <button class="calc-btn" data-act="digit" data-val="2">2</button>
+    <button class="calc-btn" data-act="digit" data-val="3">3</button>
+    <button class="calc-btn op" data-act="op" data-op="+">+</button>
+
+    <button class="calc-btn" data-act="digit" data-val="0" style="grid-column: span 2;">0</button>
+    <button class="calc-btn" data-act="dot">.</button>
+    <button class="calc-btn eq" data-act="eq" style="grid-column: span 1;">=</button>
+  </div>
+  <div class="calc-insert">
+    <button id="calcToIncome">→ Income row-e boshao</button>
+    <button id="calcToExpense">→ Khoroc row-e boshao</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const pad = n => String(n).padStart(2,'0');
+  const monthKey = (y,m) => `ledger_month_${y}-${pad(m+1)}`;
+  const SETTINGS_KEY = 'ledger_settings';
+  const daysInMonth = (y,m) => new Date(y, m+1, 0).getDate();
+  const fmt = n => '৳ ' + Math.round(n||0).toLocaleString('en-IN');
+
+  const today = new Date();
+  const state = { viewYear: today.getFullYear(), viewMonth: today.getMonth(), monthData: null, activeDay: null };
+
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'), 1400);
+  }
+
+  function loadSettings(){
+    try{
+      const raw = localStorage.getItem(SETTINGS_KEY);
+      if(!raw) throw new Error('none');
+      const s = JSON.parse(raw);
+      if(s.yearlyGoal === undefined) s.yearlyGoal = 0;
+      return s;
+    }catch(e){ return { monthlyGoal: 0, dailyGoal: 0, yearlyGoal: 0 }; }
+  }
+  function saveSettings(data){
+    try{ localStorage.setItem(SETTINGS_KEY, JSON.stringify(data)); }
+    catch(e){ console.error('settings save failed', e); showToast('Save failed! Storage full?'); }
+  }
+  function loadMonth(y, m){
+    try{
+      const raw = localStorage.getItem(monthKey(y,m));
+      if(!raw) throw new Error('none');
+      const data = JSON.parse(raw);
+      if(!data.days) data.days = {};
+      return data;
+    }catch(e){
+      const settings = loadSettings();
+      return { monthlyGoal: settings.monthlyGoal||0, dailyGoal: settings.dailyGoal||0, days:{} };
+    }
+  }
+  function saveMonth(y, m, data){
+    try{ localStorage.setItem(monthKey(y,m), JSON.stringify(data)); }
+    catch(e){ console.error('Month save failed', e); showToast('Save failed! Storage full?'); }
+  }
+
+  function ensureDay(data, dayNum){
+    if(!data.days[dayNum]) data.days[dayNum] = { incomes:[], expenses:[], note:'', goals:[] };
+    const entry = data.days[dayNum];
+    if(!entry.goals) entry.goals = [];
+    if(!entry.incomes){
+      entry.incomes = (entry.income && Number(entry.income)>0) ? [{ label:'Income', amount:Number(entry.income) }] : [];
+      delete entry.income;
+    }
+    if(!entry.expenses){
+      entry.expenses = (entry.expense && Number(entry.expense)>0) ? [{ label:'Khoroc', amount:Number(entry.expense) }] : [];
+      delete entry.expense;
+    }
+    return entry;
+  }
+
+  function sumRows(rows){
+    return (rows||[]).reduce((s,r) => s + (Number(r.amount)||0), 0);
+  }
+  function netOf(entry){
+    if(!entry) return 0;
+    return sumRows(entry.incomes) - sumRows(entry.expenses);
+  }
+
+  function computeYearNet(year){
+    let total = 0;
+    for(let mi=0; mi<12; mi++){
+      try{
+        const raw = localStorage.getItem(monthKey(year, mi));
+        if(!raw) continue;
+        const data = JSON.parse(raw);
+        Object.values(data.days || {}).forEach(entry => {
+          const incs = entry.incomes || (entry.income ? [{amount:entry.income}] : []);
+          const exps = entry.expenses || (entry.expense ? [{amount:entry.expense}] : []);
+          total += sumRows(incs) - sumRows(exps);
+        });
+      }catch(e){ /* skip broken month data */ }
+    }
+    return total;
+  }
+
+  function renderYearOverview(){
+    const settings = loadSettings();
+    document.getElementById('yearlyGoalInput').value = settings.yearlyGoal || '';
+
+    const now = new Date();
+    const endOfYear = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+    const msLeft = Math.max(0, endOfYear - now);
+    const hoursLeft = Math.floor(msLeft / (1000*60*60));
+    const daysLeft = Math.floor(msLeft / (1000*60*60*24));
+    const monthsLeft = 12 - (now.getMonth() + 1);
+
+    document.getElementById('yMonthsLeft').querySelector('.val').textContent = monthsLeft;
+    document.getElementById('yDaysLeft').querySelector('.val').textContent = daysLeft;
+    document.getElementById('yHoursLeft').querySelector('.val').textContent = hoursLeft.toLocaleString('en-IN');
+
+    const yearNet = computeYearNet(now.getFullYear());
+    const yearGoal = settings.yearlyGoal || 0;
+    const yearRemaining = Math.max(yearGoal - yearNet, 0);
+    const yearPct = yearGoal > 0 ? Math.round((yearNet/yearGoal)*100) : 0;
+
+    document.getElementById('yEarned').querySelector('.val').textContent = fmt(yearNet);
+    document.getElementById('yRemaining').querySelector('.val').textContent = fmt(yearRemaining);
+    document.getElementById('yRemaining').classList.toggle('warn', yearRemaining>0);
+    document.getElementById('yPct').querySelector('.val').textContent = yearPct + '%';
+
+    document.getElementById('yPerDay').querySelector('.val').textContent = daysLeft>0 ? fmt(yearRemaining/daysLeft) : '—';
+    document.getElementById('yPerHour').querySelector('.val').textContent = hoursLeft>0 ? ('৳ ' + (yearRemaining/hoursLeft).toFixed(1)) : '—';
+  }
+
+  document.getElementById('yearlyGoalInput').addEventListener('change', (e) => {
+    const val = Number(e.target.value) || 0;
+    const settings = loadSettings();
+    settings.yearlyGoal = val;
+    saveSettings(settings);
+    renderYearOverview();
+  });
+
+  document.getElementById('exportBtn').addEventListener('click', () => {
+    try{
+      const data = {};
+      for(let i=0;i<localStorage.length;i++){
+        const key = localStorage.key(i);
+        if(key && key.startsWith('ledger_')) data[key] = localStorage.getItem(key);
+      }
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'income_ledger_backup_' + new Date().toISOString().slice(0,10) + '.json';
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Backup download hocche');
+    }catch(e){ console.error(e); showToast('Export failed'); }
+  });
+
+  document.getElementById('importBtn').addEventListener('click', () => {
+    document.getElementById('importFile').click();
+  });
+
+  document.getElementById('importFile').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try{
+        const data = JSON.parse(ev.target.result);
+        Object.keys(data).forEach(k => {
+          if(k.startsWith('ledger_')) localStorage.setItem(k, data[k]);
+        });
+        state.monthData = loadMonth(state.viewYear, state.viewMonth);
+        render();
+        showToast('Backup import hoyeche!');
+      }catch(err){ console.error(err); showToast('Import failed - file thik ache?'); }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+
+  function isPastMonth(y,m){ return (y < today.getFullYear()) || (y === today.getFullYear() && m < today.getMonth()); }
+  function isFutureMonth(y,m){ return (y > today.getFullYear()) || (y === today.getFullYear() && m > today.getMonth()); }
+  function isCurrentMonth(y,m){ return y === today.getFullYear() && m === today.getMonth(); }
+
+  function init(){
+    state.monthData = loadMonth(state.viewYear, state.viewMonth);
+    render();
+  }
+
+  function render(){
+    const { viewYear: y, viewMonth: m, monthData } = state;
+    const dim = daysInMonth(y,m);
+
+    document.getElementById('monthLabel').textContent = new Date(y, m, 1).toLocaleString('en-US', { month:'long', year:'numeric' });
+    document.getElementById('monthlyGoalInput').value = monthData.monthlyGoal || '';
+    document.getElementById('dailyGoalInput').value = monthData.dailyGoal || '';
+
+    let totalIncome = 0, totalExpense = 0;
+    Object.keys(monthData.days).forEach(k => {
+      const entry = ensureDay(monthData, k);
+      totalIncome += sumRows(entry.incomes);
+      totalExpense += sumRows(entry.expenses);
+    });
+    const totalNet = totalIncome - totalExpense;
+
+    document.getElementById('totalEarned').textContent = fmt(totalNet);
+    document.getElementById('goalDisplay').textContent = 'Goal: ' + fmt(monthData.monthlyGoal||0);
+    document.getElementById('totalsSub').textContent = `Income ${fmt(totalIncome)} − Khoroc ${fmt(totalExpense)}`;
+
+    const pct = monthData.monthlyGoal > 0 ? Math.min(100, (totalNet/monthData.monthlyGoal)*100) : 0;
+    document.getElementById('progressFill').style.width = Math.max(pct,0) + '%';
+    const realPct = monthData.monthlyGoal > 0 ? Math.round((totalNet/monthData.monthlyGoal)*100) : 0;
+    document.getElementById('progressPct').textContent = realPct + '% puron hoyeche';
+
+    const remaining = Math.max((monthData.monthlyGoal||0) - totalNet, 0);
+    document.getElementById('statRemaining').querySelector('.val').textContent = fmt(remaining);
+    document.getElementById('statRemaining').classList.toggle('warn', remaining>0);
+
+    let daysLeft = 0;
+    if(isCurrentMonth(y,m)) daysLeft = dim - today.getDate() + 1;
+    else if(isFutureMonth(y,m)) daysLeft = dim;
+    else daysLeft = 0;
+    document.getElementById('statDaysLeft').querySelector('.val').textContent = daysLeft;
+
+    const avgBox = document.getElementById('statAvgNeeded');
+    if(daysLeft > 0){
+      avgBox.querySelector('.val').textContent = fmt(remaining/daysLeft);
+      avgBox.querySelector('.lbl').textContent = 'Protidin Gore Lagbe';
+    } else if(isPastMonth(y,m)){
+      avgBox.querySelector('.val').textContent = remaining>0 ? 'Miss' : 'Done';
+      avgBox.querySelector('.lbl').textContent = 'Mash Sesh';
+    } else {
+      avgBox.querySelector('.val').textContent = '—';
+      avgBox.querySelector('.lbl').textContent = 'Protidin Gore Lagbe';
+    }
+
+    const grid = document.getElementById('calGrid');
+    grid.innerHTML = '';
+    const firstDow = new Date(y, m, 1).getDay();
+    for(let i=0;i<firstDow;i++){
+      const empty = document.createElement('div');
+      empty.className = 'day-cell empty';
+      grid.appendChild(empty);
+    }
+    for(let d=1; d<=dim; d++){
+      const cell = document.createElement('div');
+      cell.className = 'day-cell';
+      const entry = monthData.days[d] ? ensureDay(monthData, d) : null;
+      const net = netOf(entry);
+      const dGoal = monthData.dailyGoal || 0;
+      const hasEntry = entry && (entry.incomes.length>0 || entry.expenses.length>0);
+
+      if(isCurrentMonth(y,m) && d===today.getDate()) cell.classList.add('today');
+
+      if(hasEntry){
+        if(dGoal > 0 && net >= dGoal) cell.classList.add('hit');
+        else if(dGoal > 0) cell.classList.add('partial');
+        else if(net < 0) cell.classList.add('zero');
+      } else if(entry && (entry.note || (entry.goals && entry.goals.length))){
+        cell.classList.add('zero');
+      }
+
+      cell.innerHTML = `<div class="day-num">${d}</div>` + (hasEntry ? `<div class="day-amt">৳${net.toLocaleString('en-IN')}</div>` : '');
+
+      if(dGoal>0 && net>=dGoal && entry && sumRows(entry.incomes)>0){
+        cell.innerHTML += `<div class="stamp">✓</div>`;
+      }
+      if(entry && entry.note){ cell.innerHTML += `<div class="note-dot">📝</div>`; }
+
+      cell.addEventListener('click', () => openModal(d));
+      grid.appendChild(cell);
+    }
+
+    renderYearOverview();
+  }
+
+  function updateNetPreview(){
+    const entry = ensureDay(state.monthData, state.activeDay);
+    const inc = sumRows(entry.incomes);
+    const exp = sumRows(entry.expenses);
+    document.getElementById('incomeTotal').textContent = fmt(inc);
+    document.getElementById('expenseTotal').textContent = fmt(exp);
+    document.getElementById('modalNet').value = (inc-exp).toLocaleString('en-IN');
+  }
+
+  function renderSourceList(containerId, rows, kind){
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+    if(!rows || rows.length===0){
+      container.innerHTML = `<div class="src-empty">Kono ${kind==='income'?'income':'khoroc'} row add kora hoyni.</div>`;
+      return;
+    }
+    rows.forEach((row, idx) => {
+      const div = document.createElement('div');
+      div.className = 'src-row';
+      div.innerHTML = `
+        <input type="text" data-idx="${idx}" class="src-label" placeholder="${kind==='income' ? 'Kothay theke (e.g. Tuition, Freelance)' : 'Kisher jonno (e.g. Bus fare, Khabar)'}" value="${escapeAttr(row.label||'')}">
+        <div class="src-amt"><span>৳</span><input type="number" data-idx="${idx}" class="src-amount" min="0" value="${row.amount||''}"></div>
+        <button class="src-del" data-idx="${idx}">✕</button>
+      `;
+      container.appendChild(div);
+    });
+    container.querySelectorAll('.src-label').forEach(inp => {
+      inp.addEventListener('input', (e) => { rows[Number(e.target.dataset.idx)].label = e.target.value; });
+    });
+    container.querySelectorAll('.src-amount').forEach(inp => {
+      inp.addEventListener('input', (e) => {
+        rows[Number(e.target.dataset.idx)].amount = Number(e.target.value) || 0;
+        updateNetPreview();
+      });
+    });
+    container.querySelectorAll('.src-del').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        rows.splice(Number(e.target.dataset.idx), 1);
+        renderSourceList(containerId, rows, kind);
+        updateNetPreview();
+      });
+    });
+  }
+
+  function escapeAttr(s){
+    return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+  }
+  function escapeHtml(s){
+    const div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+  }
+
+  function openModal(dayNum){
+    state.activeDay = dayNum;
+    const entry = ensureDay(state.monthData, dayNum);
+    const dateObj = new Date(state.viewYear, state.viewMonth, dayNum);
+    document.getElementById('modalDate').textContent = dateObj.toLocaleString('en-US', { weekday:'short', month:'short', day:'numeric' });
+    document.getElementById('modalNote').value = entry.note || '';
+    renderSourceList('incomeList', entry.incomes, 'income');
+    renderSourceList('expenseList', entry.expenses, 'expense');
+    updateNetPreview();
+    renderGoalList(entry);
+    document.getElementById('newGoalToday').value = '';
+    document.getElementById('newGoalTomorrow').value = '';
+    document.getElementById('overlay').classList.remove('hidden');
+  }
+
+  function renderGoalList(entry){
+    const list = document.getElementById('goalList');
+    list.innerHTML = '';
+    if(!entry.goals || entry.goals.length===0){
+      list.innerHTML = '<div class="hint">Ekhono kono lokkho add kora hoyni.</div>';
+      return;
+    }
+    entry.goals.forEach((g, idx) => {
+      const row = document.createElement('div');
+      row.className = 'goal-item' + (g.done ? ' done' : '');
+      row.innerHTML = `
+        <input type="checkbox" ${g.done?'checked':''} data-idx="${idx}">
+        <div class="goal-text">${escapeHtml(g.text)}</div>
+        <button class="goal-del" data-idx="${idx}">✕</button>
+      `;
+      list.appendChild(row);
+    });
+    list.querySelectorAll('input[type=checkbox]').forEach(cb => {
+      cb.addEventListener('change', (e) => {
+        entry.goals[Number(e.target.dataset.idx)].done = e.target.checked;
+        renderGoalList(entry);
+      });
+    });
+    list.querySelectorAll('.goal-del').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        entry.goals.splice(Number(e.target.dataset.idx), 1);
+        renderGoalList(entry);
+      });
+    });
+  }
+
+  document.getElementById('addIncomeRow').addEventListener('click', () => {
+    const entry = ensureDay(state.monthData, state.activeDay);
+    entry.incomes.push({ label:'', amount:0 });
+    renderSourceList('incomeList', entry.incomes, 'income');
+    updateNetPreview();
+  });
+  document.getElementById('addExpenseRow').addEventListener('click', () => {
+    const entry = ensureDay(state.monthData, state.activeDay);
+    entry.expenses.push({ label:'', amount:0 });
+    renderSourceList('expenseList', entry.expenses, 'expense');
+    updateNetPreview();
+  });
+
+  function closeModalAndSave(){
+    const entry = ensureDay(state.monthData, state.activeDay);
+    entry.note = document.getElementById('modalNote').value || '';
+    saveMonth(state.viewYear, state.viewMonth, state.monthData);
+    document.getElementById('overlay').classList.add('hidden');
+    render();
+    showToast('Save hoyeche');
+  }
+
+  document.getElementById('closeModal').addEventListener('click', () => {
+    document.getElementById('overlay').classList.add('hidden');
+  });
+  document.getElementById('saveModalBtn').addEventListener('click', closeModalAndSave);
+
+  document.getElementById('clearModalBtn').addEventListener('click', () => {
+    const entry = ensureDay(state.monthData, state.activeDay);
+    entry.incomes = [];
+    entry.expenses = [];
+    entry.note = '';
+    saveMonth(state.viewYear, state.viewMonth, state.monthData);
+    document.getElementById('overlay').classList.add('hidden');
+    render();
+    showToast('Entry clear kora hoyeche');
+  });
+
+  document.getElementById('addGoalTodayBtn').addEventListener('click', () => {
+    const input = document.getElementById('newGoalToday');
+    const text = input.value.trim();
+    if(!text) return;
+    const entry = ensureDay(state.monthData, state.activeDay);
+    entry.goals.push({ text, done:false });
+    input.value = '';
+    renderGoalList(entry);
+  });
+
+  document.getElementById('addGoalTomorrowBtn').addEventListener('click', () => {
+    const input = document.getElementById('newGoalTomorrow');
+    const text = input.value.trim();
+    if(!text) return;
+    const currentDate = new Date(state.viewYear, state.viewMonth, state.activeDay);
+    const nextDate = new Date(currentDate);
+    nextDate.setDate(nextDate.getDate() + 1);
+    const ny = nextDate.getFullYear(), nm = nextDate.getMonth(), nd = nextDate.getDate();
+
+    if(ny === state.viewYear && nm === state.viewMonth){
+      const nEntry = ensureDay(state.monthData, nd);
+      nEntry.goals.push({ text, done:false });
+      saveMonth(state.viewYear, state.viewMonth, state.monthData);
+    } else {
+      const otherData = loadMonth(ny, nm);
+      const nEntry = ensureDay(otherData, nd);
+      nEntry.goals.push({ text, done:false });
+      saveMonth(ny, nm, otherData);
+    }
+    input.value = '';
+    showToast('Kal-er plan add hoyeche');
+  });
+
+  document.getElementById('monthlyGoalInput').addEventListener('change', (e) => {
+    const val = Number(e.target.value) || 0;
+    state.monthData.monthlyGoal = val;
+    saveMonth(state.viewYear, state.viewMonth, state.monthData);
+    saveSettings({ monthlyGoal: val, dailyGoal: state.monthData.dailyGoal||0 });
+    render();
+  });
+  document.getElementById('dailyGoalInput').addEventListener('change', (e) => {
+    const val = Number(e.target.value) || 0;
+    state.monthData.dailyGoal = val;
+    saveMonth(state.viewYear, state.viewMonth, state.monthData);
+    saveSettings({ monthlyGoal: state.monthData.monthlyGoal||0, dailyGoal: val });
+    render();
+  });
+  document.getElementById('autoCalcBtn').addEventListener('click', () => {
+    const dim = daysInMonth(state.viewYear, state.viewMonth);
+    const val = Math.ceil((state.monthData.monthlyGoal||0) / dim);
+    state.monthData.dailyGoal = val;
+    document.getElementById('dailyGoalInput').value = val;
+    saveMonth(state.viewYear, state.viewMonth, state.monthData);
+    saveSettings({ monthlyGoal: state.monthData.monthlyGoal||0, dailyGoal: val });
+    render();
+    showToast('Daily target auto-calculate hoyeche');
+  });
+
+  document.getElementById('prevMonth').addEventListener('click', () => {
+    state.viewMonth--;
+    if(state.viewMonth < 0){ state.viewMonth = 11; state.viewYear--; }
+    state.monthData = loadMonth(state.viewYear, state.viewMonth);
+    render();
+  });
+  document.getElementById('nextMonth').addEventListener('click', () => {
+    state.viewMonth++;
+    if(state.viewMonth > 11){ state.viewMonth = 0; state.viewYear++; }
+    state.monthData = loadMonth(state.viewYear, state.viewMonth);
+    render();
+  });
+
+  init();
+
+  const calc = { display: '0', prev: null, operator: null, waiting: false };
+
+  function calcRender(){ document.getElementById('calcDisplay').textContent = calc.display; }
+  function calcDigit(d){
+    if(calc.waiting){ calc.display = d; calc.waiting = false; }
+    else{ calc.display = (calc.display === '0') ? d : calc.display + d; }
+    calcRender();
+  }
+  function calcDot(){
+    if(calc.waiting){ calc.display = '0.'; calc.waiting = false; calcRender(); return; }
+    if(!calc.display.includes('.')) calc.display += '.';
+    calcRender();
+  }
+  function calcBack(){
+    if(calc.waiting) return;
+    calc.display = calc.display.length>1 ? calc.display.slice(0,-1) : '0';
+    calcRender();
+  }
+  function calcClear(){
+    calc.display = '0'; calc.prev = null; calc.operator = null; calc.waiting = false;
+    calcRender();
+  }
+  function calcApply(a,b,op){
+    switch(op){
+      case '+': return a+b;
+      case '−': return a-b;
+      case '×': return a*b;
+      case '÷': return b===0 ? 0 : a/b;
+      case '%': return a % b;
+      default: return b;
+    }
+  }
+  function calcOperator(nextOp){
+    const inputVal = parseFloat(calc.display);
+    if(calc.prev === null){ calc.prev = inputVal; }
+    else if(!calc.waiting){
+      calc.prev = calcApply(calc.prev, inputVal, calc.operator);
+      calc.display = String(Math.round(calc.prev * 10000)/10000);
+    }
+    calc.operator = nextOp;
+    calc.waiting = true;
+    calcRender();
+  }
+  function calcEquals(){
+    if(calc.operator === null || calc.prev === null) return;
+    const inputVal = parseFloat(calc.display);
+    const result = calcApply(calc.prev, inputVal, calc.operator);
+    calc.display = String(Math.round(result * 10000)/10000);
+    calc.prev = null; calc.operator = null; calc.waiting = true;
+    calcRender();
+  }
+
+  document.getElementById('calcFab').addEventListener('click', () => {
+    document.getElementById('calcPanel').classList.toggle('hidden');
+  });
+  document.getElementById('calcClose').addEventListener('click', () => {
+    document.getElementById('calcPanel').classList.add('hidden');
+  });
+  document.querySelectorAll('.calc-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const act = btn.dataset.act;
+      if(act === 'digit') calcDigit(btn.dataset.val);
+      else if(act === 'dot') calcDot();
+      else if(act === 'back') calcBack();
+      else if(act === 'clear') calcClear();
+      else if(act === 'op') calcOperator(btn.dataset.op);
+      else if(act === 'eq') calcEquals();
+    });
+  });
+
+  document.getElementById('calcToIncome').addEventListener('click', () => {
+    if(document.getElementById('overlay').classList.contains('hidden')){
+      showToast('Age ekta din select koro calendar theke');
+      return;
+    }
+    const entry = ensureDay(state.monthData, state.activeDay);
+    entry.incomes.push({ label:'', amount: Math.round(parseFloat(calc.display)||0) });
+    renderSourceList('incomeList', entry.incomes, 'income');
+    updateNetPreview();
+    showToast('Notun income row add hoyeche');
+  });
+  document.getElementById('calcToExpense').addEventListener('click', () => {
+    if(document.getElementById('overlay').classList.contains('hidden')){
+      showToast('Age ekta din select koro calendar theke');
+      return;
+    }
+    const entry = ensureDay(state.monthData, state.activeDay);
+    entry.expenses.push({ label:'', amount: Math.round(parseFloat(calc.display)||0) });
+    renderSourceList('expenseList', entry.expenses, 'expense');
+    updateNetPreview();
+    showToast('Notun khoroc row add hoyeche');
+  });
+
+})();
+</script>
+</body>
+</html>
